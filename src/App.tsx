@@ -4,6 +4,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowRight, Check, ChevronRight, Menu, Send, X, Plus } from 'lucide-react';
 import { BlueprintArt } from '@/components/BlueprintArt';
 import { navItems, services, type Service } from '@/data/services';
+import { SolarTrackerArt, CleaningBotArt, GarbageBotArt, SmartWatchArt, SmartHomeArt } from './components/HardwareArt';
+import { ScrollStoryArt } from './components/ScrollStoryArt';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -13,11 +15,7 @@ const sectionIds = ['home', 'about', 'services', 'industries', 'works', 'contact
 function Brand({ compact = false, className = '' }: { compact?: boolean; className?: string }) {
   return (
     <a href="#home" className={`brand${compact ? ' brand--compact' : ''} ${className}`} aria-label="Techno Versatile home">
-      <svg className="brand-icon" viewBox="0 0 32 24" width="32" height="24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M3 18h6l9-12" />
-        <path d="M14 18l9-12" />
-      </svg>
-      <span className="brand-name"><b>TECHNO</b><b>VERSATILE</b></span>
+      <img src="/tvlogo-2.png" alt="Techno Versatile" className="brand-img" />
     </a>
   );
 }
@@ -28,18 +26,69 @@ function TL({ children, className = '', ...rest }: { children: React.ReactNode; 
 }
 
 
-/* ─── Side Nav ───────────────────────────────────────────────── */
-function SideNav({ activeSection }: { activeSection: string }) {
+/* ─── Dynamic Scrub Nav ──────────────────────────────────────── */
+function DynamicNav({ activeSection }: { activeSection: string }) {
+  const containerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (window.innerWidth <= 1024) return;
+    
+    const ctx = gsap.context(() => {
+      const container = containerRef.current!;
+      const items = gsap.utils.toArray('.dynamic-nav__item') as HTMLElement[];
+      
+      // Calculate dynamic offsets
+      const containerW = container.offsetWidth;
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+      
+      // Move container from center top to left middle (slightly higher)
+      const startX = 28 - (winW / 2) + (containerW / 2);
+      const startY = (winH / 2) - 130;
+      
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: 'body',
+          start: 'top top',
+          end: '800px top',
+          scrub: 1.5,
+        }
+      });
+
+      tl.from(container, { x: startX, y: startY, ease: 'power2.inOut' }, 0);
+      
+      const rail = container.querySelector('.dynamic-nav__rail') as HTMLElement;
+      if (rail && items.length > 0) {
+        rail.style.left = (items[0].offsetLeft + 3) + 'px';
+        rail.style.top = '-10px';
+        rail.style.height = ((items.length - 1) * 45 + 20) + 'px';
+        tl.from(rail, { opacity: 1, duration: 0.15 }, 0);
+      }
+
+      // Stack items vertically for the side state
+      items.forEach((item, i) => {
+        const leftOffset = item.offsetLeft - items[0].offsetLeft;
+        tl.from(item, {
+          x: -leftOffset,
+          y: i * 45,
+          ease: 'power2.inOut'
+        }, 0);
+      });
+      
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <aside className="side-nav" aria-label="Section navigation">
-      <div className="side-nav__rail" />
+    <nav className="dynamic-nav" ref={containerRef} aria-label="Dynamic navigation">
+      <div className="dynamic-nav__rail" />
       {navItems.map((item) => (
-        <a className={`side-nav__item ${activeSection === item.target ? 'is-active' : ''}`} href={`#${item.target}`} key={item.label}>
-          <span className="side-nav__dot" />
+        <a className={`dynamic-nav__item ${activeSection === item.target ? 'is-active' : ''}`} href={`#${item.target}`} key={item.label}>
+          <span className="nav-dot" />
           <span>{item.label}</span>
         </a>
       ))}
-    </aside>
+    </nav>
   );
 }
 
@@ -48,11 +97,7 @@ function TopNav({ onMenu }: { onMenu: () => void }) {
   return (
     <header className="top-nav">
       <Brand />
-      <nav className="top-nav__links" aria-label="Primary navigation">
-        {['SOLUTIONS', 'INDUSTRIES', 'INSIGHTS', 'CONTACT'].map((item) => (
-          <a href={`#${item === 'SOLUTIONS' ? 'services' : item.toLowerCase()}`} key={item}>{item}</a>
-        ))}
-      </nav>
+      
       <div className="top-nav__actions">
         <a className="nav-cta" href="#contact">LET'S BUILD <ArrowRight size={12} /></a>
         <button className="menu-button" onClick={onMenu} aria-label="Open navigation"><Menu size={17} /></button>
@@ -189,30 +234,35 @@ function HeroSection() {
     const topNav = document.querySelector('.top-nav');
     const sideNav = document.querySelector('.side-nav');
 
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    const tl = gsap.timeline(); // Intro load
+    tl.fromTo(q('.hero-env-layer'), { opacity: 0 }, { opacity: 1, duration: 2, stagger: 0.2 })
+      .fromTo(qs('.blueprint-backdrop__grid'), { opacity: 0 }, { opacity: 1, duration: 1.5 }, "-=1")
+      .fromTo(q('.hero__left > *'), { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, stagger: 0.1 }, "-=0.5");
 
-    tl
-      // Environment layers
-      .fromTo(q('.hero-env-layer--1'), { opacity: 0 }, { opacity: 1, duration: 2 }, 1.4)
-      .fromTo(q('.hero-env-layer--2'), { opacity: 0 }, { opacity: 1, duration: 1.5 }, 1.8)
-      .fromTo(q('.hero-env-layer--3'), { opacity: 0 }, { opacity: 1, duration: 1.2 }, 2.0)
-      // Blueprint grid
-      .fromTo(qs('.blueprint-backdrop__grid'), { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 1.4 }, 1.6)
-      // Technical line markers
-      .fromTo(q('.backdrop-line'), { scaleX: 0, transformOrigin: 'left center' }, { scaleX: 1, duration: 0.8, stagger: 0.12 }, 1.8)
-      .fromTo(q('.backdrop-label'), { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.1 }, 2.1)
-      .fromTo(q('.backdrop-node'), { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.4, stagger: 0.2, ease: 'back.out(2)' }, 2.2)
-      // Nav (outside hero, use doc selectors)
-      .fromTo(topNav, { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.7 }, 1.8)
-      .fromTo(sideNav, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.7 }, 2.0)
-      // Hero content
-      .fromTo(qs('.hero__headline'), { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.9 }, 2.2)
-      .fromTo(qs('.hero__tagline'), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.7 }, 2.5)
-      .fromTo(q('.hero__subtext'), { opacity: 0 }, { opacity: 1, duration: 0.6 }, 2.6)
-      .fromTo(qs('.hero__cta'), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.6 }, 2.8)
-      .fromTo(qs('.hero__right-copy'), { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.8 }, 2.4);
+    // Cinematic Scroll Story
+    const scrollTl = gsap.timeline({
+      scrollTrigger: {
+        trigger: hero,
+        start: 'top top',
+        end: '+=1500',
+        scrub: 1,
+        pin: true,
+      }
+    });
 
-    return () => { tl.kill(); };
+    scrollTl
+      // Stage 1: Hero environment recedes, technical grid expands
+      .fromTo(q('.hero-env-layer--1, .hero-env-layer--2'), { opacity: 1, scale: 1 }, { opacity: 0, scale: 1.1, duration: 2 })
+      .fromTo(q('.hero__left, .hero__right-copy, .hero__far-right'), { opacity: 1, x: 0 }, { opacity: 0, x: -30, duration: 1 }, 0)
+      .fromTo(qs('.blueprint-backdrop__grid'), { scale: 1, opacity: 1 }, { scale: 1.2, opacity: 0.8, duration: 2 }, 0)
+      
+      // Stage 2: Logo / Core becomes prominent
+      .fromTo(topNav, { y: 0, opacity: 1 }, { y: -100, opacity: 0, duration: 1 }, 0)
+      .fromTo(sideNav, { x: 0, opacity: 1 }, { x: -100, opacity: 0, duration: 1 }, 0)
+      .fromTo(q('.backdrop-node'), { scale: 1, opacity: 1 }, { scale: 4, opacity: 0, duration: 1 }, 1)
+      .fromTo(q('.backdrop-line'), { opacity: 1 }, { opacity: 0, duration: 1 }, 1);
+
+    return () => { tl.kill(); scrollTl.kill(); };
   }, []);
 
   // Parallax on mouse move
@@ -258,13 +308,13 @@ function HeroSection() {
       <div className="hero__layout">
         {/* LEFT — Brand + Headline */}
         <div className="hero__left">
-          <TL className="hero__system-label hero__subtext">// TECHNO VERSATILE — SYSTEM ACTIVE</TL>
+          <TL className="hero__system-label hero__subtext">// WELCOME TO</TL>
           <h1 className="hero__headline">TECHNO<br />VERSATILE</h1>
           <p className="hero__tagline">TECHNOLOGICALLY<br />CAPABLE IN MANY<br />DIFFERENT AREAS</p>
-          <p className="hero__desc hero__subtext">We build, design, and deliver technology solutions across software, hardware, AI, automation and beyond.</p>
+          <p className="hero__desc hero__subtext">We design and develop technology solutions across software, hardware, AI, connected systems, immersive experiences and automation — bringing different disciplines together to solve real-world problems.</p>
           <div className="hero__cta">
-            <a className="tv-cta tv-cta--primary" href="#services">EXPLORE SOLUTIONS <ArrowRight size={13} /></a>
-            <a className="tv-cta tv-cta--ghost" href="#about">OUR APPROACH</a>
+            <a className="tv-cta tv-cta--primary" href="#services">EXPLORE OUR CAPABILITIES <ArrowRight size={13} /></a>
+            <a className="tv-cta tv-cta--ghost" href="#works">VIEW OUR WORKS</a>
           </div>
         </div>
 
@@ -290,45 +340,58 @@ function AboutSection() {
   const stages = ['IDEA', 'DESIGN', 'ENGINEERING', 'DEVELOPMENT', 'INTEGRATION', 'DEPLOYMENT', 'REAL-WORLD SOLUTION'];
 
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo('.process-step', { opacity: 0, x: -20 }, {
-        opacity: 1, x: 0, stagger: 0.12, duration: 0.7, ease: 'power3.out',
-        scrollTrigger: { trigger: '.process-diagram', start: 'top 80%' },
+      const scrollTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start: 'top top',
+          end: '+=3000',
+          scrub: 1,
+          pin: true,
+        }
       });
-      gsap.fromTo('.about__copy', { opacity: 0, y: 30 }, {
-        opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
-        scrollTrigger: { trigger: ref.current, start: 'top 75%' },
-      });
-      // Animate the path line
-      gsap.fromTo('.process-step__line', { scaleX: 0 }, {
-        scaleX: 1, stagger: 0.12, duration: 0.5, ease: 'power2.out',
-        scrollTrigger: { trigger: '.process-diagram', start: 'top 80%' },
-      });
+      scrollTl
+        .fromTo('.section-heading', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1 })
+        .fromTo('.about-bg-layer', { opacity: 0, scale: 1.1 }, { opacity: 0.3, scale: 1, duration: 1.5 }, "<")
+        .fromTo('.about__block', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 1, stagger: 0.5 });
     }, ref);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section className="about section-anchor" id="about" ref={ref}>
-      <div className="section-heading">
-        <TL>01 / OUR APPROACH</TL>
-        <h2>One core.<br /><em>Many</em> possibilities.</h2>
-      </div>
-      <div className="about__body">
-        <div className="process-diagram">
-          {stages.map((stage, index) => (
-            <div className="process-step" key={stage}>
-              <span className="process-step__index">0{index + 1}</span>
-              <strong>{stage}</strong>
-              {index < stages.length - 1 && <span className="process-step__connector" />}
-              <span className="process-step__line" />
-            </div>
-          ))}
+    <section className="about section-anchor" id="about" ref={ref} style={{ position: 'relative' }}>
+      <div 
+        className="about-bg-layer" 
+        style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          backgroundImage: "url('/about.png')", 
+          backgroundSize: 'cover', 
+          backgroundPosition: 'center', 
+          opacity: 0.2, 
+          pointerEvents: 'none'
+        }} 
+      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div className="section-heading">
+          <TL>01 / COMPANY</TL>
+          <h2>TECHNOLOGY<br /><em>WITHOUT</em> BOUNDARIES.</h2>
         </div>
-        <div className="about__copy">
-          <p>Techno Versatile is a technology ecosystem built to move ideas from the first spark to the real world. We connect disciplines, people and systems to create solutions that are as adaptable as the challenges they solve.</p>
-          <p>From embedded hardware to cloud infrastructure, from AI intelligence to immersive AR — we are one team spanning many capabilities.</p>
-          <a className="tv-link" href="#services">OUR CAPABILITIES <ArrowRight size={13} /></a>
+        <div className="about__grid">
+          <div className="about__block">
+            <h3>MULTIDISCIPLINARY ENGINEERING</h3>
+            <p>Techno Versatile brings different technology disciplines together rather than treating them as isolated services. From <b>SOFTWARE</b> and <b>HARDWARE</b> to <b>AI</b>, <b>IoT</b>, <b>AR/VR</b>, <b>AUTOMATION</b>, and <b>CLOUD</b>, we are one interconnected engineering ecosystem.</p>
+          </div>
+          <div className="about__block">
+            <h3>FROM IDEA TO IMPLEMENTATION</h3>
+            <p>We don't just talk about technology. We build it. Our multidisciplinary team handles the entire lifecycle — taking complex requirements and engineering robust, scalable, and connected solutions.</p>
+          </div>
+          <div className="about__block">
+            <h3>TECHNOLOGY BUILT FOR REAL USE</h3>
+            <p>Every system, application, and piece of physical hardware we engineer is designed to solve real-world problems, optimize operations, and create meaningful impact across multiple industries.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -373,16 +436,29 @@ function ServicePanel({ service, onSelect }: { service: Service; onSelect: (s: S
       <div className="service-panel__body">
         <span className="service-number">{service.number}</span>
         <h3>{service.title}</h3>
-        <p>{service.description}</p>
-        <div className="service-panel__labels">
-          {service.labels.slice(0, 4).map((label) => (
-            <span key={label}><i />{label}</span>
-          ))}
+        <p className="service-positioning">{service.positioning}</p>
+        
+        <div className="service-details">
+          <p className="service-overview">{service.overview}</p>
+          <div className="service-meta-grid">
+            <div className="service-meta-col">
+              <TL>CAPABILITIES</TL>
+              <ul>
+                {service.capabilities.map(c => <li key={c}>{c}</li>)}
+              </ul>
+            </div>
+            <div className="service-meta-col">
+              <TL>TECHNOLOGY</TL>
+              <ul>
+                {service.technologies.map(t => <li key={t}>{t}</li>)}
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="service-panel__footer">
-        <button className="sv-cta">EXPLORE <ChevronRight size={11} /></button>
+        <button className="sv-cta">{service.customCta || 'EXPLORE DOMAIN'} <ChevronRight size={11} /></button>
         <span className="service-panel__corner">{service.number} <span>/</span> 06</span>
       </div>
     </article>
@@ -394,11 +470,26 @@ function ServicesSection({ onSelect }: { onSelect: (s: Service) => void }) {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
     const ctx = gsap.context(() => {
-      gsap.fromTo('.service-panel', { opacity: 0, y: 40 }, {
-        opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: 'power3.out',
-        scrollTrigger: { trigger: '.services__grid', start: 'top 85%' },
+      const scrollTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start: 'top top',
+          end: '+=1500',
+          scrub: 1,
+          pin: true,
+        }
       });
+      
+      scrollTl
+        .fromTo('.services__intro', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 1 })
+        .fromTo('.service-panel', { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1.5, stagger: 0.3 }, "-=0.5")
+        // Technical lines cross-connecting the domains
+        .to('.service-panel', { borderColor: 'var(--mint)', duration: 1, stagger: 0.3 }, 1);
+        
     }, ref);
     return () => ctx.revert();
   }, []);
@@ -435,119 +526,244 @@ function IndustriesSection() {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo('.industry-node', { opacity: 0, scale: 0.8 }, {
-        opacity: 1, scale: 1, stagger: 0.08, duration: 0.6, ease: 'back.out(1.5)',
-        scrollTrigger: { trigger: '.industry-map', start: 'top 80%' },
+      const scrollTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start: 'top top',
+          end: '+=3000',
+          scrub: 1,
+          pin: true,
+        }
       });
+      scrollTl
+        .fromTo('.section-heading', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1 })
+        .fromTo('.industries-bg-layer', { opacity: 0, scale: 1.1 }, { opacity: 0.3, scale: 1, duration: 1.5 }, "<")
+        .fromTo('.industry-map__connections', { opacity: 0 }, { opacity: 1, duration: 1 }, "-=0.5")
+        .fromTo('.industry-node', { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, stagger: 0.2, duration: 1, ease: 'back.out' }, "-=0.5")
+        .fromTo('.industries__aside', { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 1 });
     }, ref);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section className="industries section-anchor" id="industries" ref={ref}>
-      <div className="section-heading">
-        <TL>03 / THE NETWORK</TL>
-        <h2>Built for<br /><em>real-world</em> impact.</h2>
-      </div>
-      <div className="industries__body">
-        <div className="industry-map">
-          <div className="industry-map__rings" aria-hidden="true">
-            <span /><span /><span /><span />
-          </div>
-          {/* Animated SVG connections */}
-          <svg className="industry-map__connections" viewBox="0 0 480 480" aria-hidden="true">
-            {industries.map((_, i) => {
-              const angle = (i / industries.length) * Math.PI * 2 - Math.PI / 2;
-              const r = 200;
-              const x = 240 + r * Math.cos(angle);
-              const y = 240 + r * Math.sin(angle);
-              return (
-                <line
-                  key={i}
-                  x1="240" y1="240"
-                  x2={x} y2={y}
-                  stroke={active === industries[i] ? 'rgba(67,240,176,0.6)' : 'rgba(67,240,176,0.12)'}
-                  strokeWidth={active === industries[i] ? 1.5 : 0.8}
-                  strokeDasharray="4 6"
-                  style={{ transition: 'stroke 0.3s, stroke-width 0.3s' }}
-                />
-              );
-            })}
-          </svg>
-          <div className="industry-map__core">
-            <span className="core-pulse" />
-            <strong>TV</strong>
-            <small>TECH CORE</small>
-          </div>
-          {industries.map((industry, index) => (
-            <div
-              className={`industry-node industry-node--${index + 1} ${active === industry ? 'is-active' : ''}`}
-              key={industry}
-              onMouseEnter={() => setActive(industry)}
-              onMouseLeave={() => setActive(null)}
-            >
-              <i />
-              {industry}
-              <span>0{index + 1}</span>
-            </div>
-          ))}
+    <section className="industries section-anchor" id="industries" ref={ref} style={{ position: 'relative' }}>
+      <div 
+        className="industries-bg-layer" 
+        style={{ 
+          position: 'absolute', 
+          inset: 0, 
+          backgroundImage: "url('/industries.png')", 
+          backgroundSize: 'cover', 
+          backgroundPosition: 'center', 
+          opacity: 0.2, 
+          pointerEvents: 'none'
+        }} 
+      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div className="section-heading">
+          <TL>03 / THE NETWORK</TL>
+          <h2>Built for<br /><em>real-world</em> impact.</h2>
         </div>
-        <div className="industries__aside">
-          <p>From learning to logistics, we apply the right technology to the right context. Our cross-domain expertise means we don't just build solutions — we understand the environments they operate in.</p>
-          <a className="tv-link" href="#contact" style={{ marginTop: '24px', display: 'inline-flex' }}>START A PROJECT <ArrowRight size={13} /></a>
+        <div className="industries__body">
+          <div className="industry-map">
+            <div className="industry-map__rings" aria-hidden="true">
+              <span /><span /><span /><span />
+            </div>
+            {/* Animated SVG connections */}
+            <svg className="industry-map__connections" viewBox="0 0 480 480" aria-hidden="true">
+              {industries.map((_, i) => {
+                const angle = (i / industries.length) * Math.PI * 2 - Math.PI / 2;
+                const r = 200;
+                const x = 240 + r * Math.cos(angle);
+                const y = 240 + r * Math.sin(angle);
+                return (
+                  <line
+                    key={i}
+                    x1="240" y1="240"
+                    x2={x} y2={y}
+                    stroke={active === industries[i] ? 'rgba(67,240,176,0.6)' : 'rgba(67,240,176,0.12)'}
+                    strokeWidth={active === industries[i] ? 1.5 : 0.8}
+                    strokeDasharray="4 6"
+                    style={{ transition: 'stroke 0.3s, stroke-width 0.3s' }}
+                  />
+                );
+              })}
+            </svg>
+            <div className="industry-map__core">
+              <span className="core-pulse" />
+              <strong>TV</strong>
+              <small>TECH CORE</small>
+            </div>
+            {industries.map((industry, index) => (
+              <div
+                className={`industry-node industry-node--${index + 1} ${active === industry ? 'is-active' : ''}`}
+                key={industry}
+                onMouseEnter={() => setActive(industry)}
+                onMouseLeave={() => setActive(null)}
+              >
+                <i />
+                {industry}
+                <span>0{index + 1}</span>
+              </div>
+            ))}
+          </div>
+          <div className="industries__aside">
+            <p>From learning to logistics, we apply the right technology to the right context. Our cross-domain expertise means we don't just build solutions — we understand the environments they operate in.</p>
+            <a className="tv-link" href="#contact" style={{ marginTop: '24px', display: 'inline-flex' }}>START A PROJECT <ArrowRight size={13} /></a>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ─── Works Section ──────────────────────────────────────────── */
-const projects = [
-  { number: '01', name: 'NEXUS / LEARNING', type: 'EDUCATION / AR + AI', detail: 'An immersive training environment that makes complex systems easier to understand.', kind: 'ar' as const },
-  { number: '02', name: 'ORBIT / OPERATIONS', type: 'LOGISTICS / SOFTWARE + IOT', detail: 'A connected command layer for moving people, products and decisions.', kind: 'software' as const },
-  { number: '03', name: 'FORGE / FACTORY', type: 'MANUFACTURING / ROBOTICS', detail: 'Intelligent automation that gives teams more precision and more possibility.', kind: 'robotics' as const },
+/* ─── Hardware Works Section ───────────────────────────────────── */
+const hardwareProjects = [
+  {
+    id: 'solar-tracker',
+    number: '01',
+    title: '4-Axis Solar Panel with Light Tracker',
+    category: 'Solar / Renewable Energy / Embedded Systems',
+    overview: 'A solar tracking system designed around multi-axis panel movement and light tracking, allowing the panel orientation to respond to changing light conditions.',
+    capabilities: ['4-AXIS MOVEMENT', 'LIGHT TRACKING', 'SOLAR POSITIONING', 'EMBEDDED CONTROL', 'RENEWABLE ENERGY'],
+    tags: ['SENSORS', 'ACTUATORS', 'EMBEDDED C', 'CONTROL SYSTEMS'],
+    accent: '#f0b878' // warm light
+  },
+  {
+    id: 'cleaning-bot',
+    number: '02',
+    title: 'Solar Panel Cleaning Bot',
+    category: 'Robotics / Solar Maintenance / Automation',
+    overview: 'An automated robotic concept designed to assist with solar panel surface cleaning and maintenance.',
+    capabilities: ['ROBOTIC CLEANING', 'SOLAR MAINTENANCE', 'AUTOMATION', 'MOTION CONTROL', 'SURFACE CLEANING'],
+    tags: ['ROBOTICS', 'MOTORS', 'PATH PLANNING', 'IoT'],
+    accent: '#ffffff' // cool white
+  },
+  {
+    id: 'garbage-bot',
+    number: '03',
+    title: 'Automatic Garbage Disposal Bot',
+    category: 'Robotics / Automation / Smart Waste Management',
+    overview: 'An automated robotic system designed to support intelligent garbage handling and disposal workflows.',
+    capabilities: ['AUTOMATED HANDLING', 'ROBOTICS', 'WASTE MANAGEMENT', 'MOTION SYSTEM', 'SMART DISPOSAL'],
+    tags: ['ROBOTICS', 'SENSORS', 'AUTOMATION', 'EMBEDDED'],
+    accent: '#d8f0d8' // green / neutral white
+  },
+  {
+    id: 'smart-watch',
+    number: '04',
+    title: 'Health Monitoring Smart Watch for Drivers',
+    category: 'Wearable Technology / IoT / Driver Safety',
+    overview: 'A wearable technology concept focused on monitoring driver-related health information through a connected smartwatch interface.',
+    capabilities: ['WEARABLE TECHNOLOGY', 'HEALTH MONITORING', 'CONNECTED DEVICE', 'REAL-TIME DATA', 'DRIVER SAFETY'],
+    tags: ['WEARABLES', 'SENSORS', 'BLUETOOTH', 'IoT'],
+    accent: '#70c8ff' // cool cyan
+  },
+  {
+    id: 'smart-home',
+    number: '05',
+    title: 'Advanced IoT Home Automation',
+    category: 'IoT / Smart Home / Automation',
+    overview: 'An interconnected home automation concept that brings devices, controls and household systems into a connected technology environment.',
+    capabilities: ['IoT CONNECTIVITY', 'SMART HOME', 'DEVICE CONTROL', 'AUTOMATION', 'CONNECTED SYSTEMS'],
+    tags: ['IoT', 'WIRELESS PROTOCOLS', 'HOME AUTOMATION', 'CLOUD'],
+    accent: '#8dddf0' // subtle blue-green
+  }
 ];
 
-function WorksSection() {
-  const ref = useRef<HTMLElement>(null);
+function HardwareWorksSection() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeProj = hardwareProjects[activeIndex];
+  const artContainerRef = useRef<HTMLDivElement>(null);
 
+  // When changing projects, morph the art container slightly
   useEffect(() => {
+    if (artContainerRef.current) {
+      gsap.fromTo(artContainerRef.current, { scale: 0.98, opacity: 0.6 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'power2.out' });
+    }
+  }, [activeIndex]);
+
+  const sectionRef = useRef<HTMLElement>(null);
+  
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
     const ctx = gsap.context(() => {
-      gsap.fromTo('.project-card', { opacity: 0, y: 30 }, {
-        opacity: 1, y: 0, stagger: 0.15, duration: 0.8, ease: 'power3.out',
-        scrollTrigger: { trigger: '.works__grid', start: 'top 85%' },
+      const scrollTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: el,
+          start: 'top top',
+          end: '+=1500',
+          scrub: 1,
+          pin: true,
+        }
       });
-    }, ref);
+
+      scrollTl
+        .fromTo('.section-heading', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1 })
+        .fromTo('.hw-nav', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 1 }, "-=0.5")
+        .fromTo('.hw-art', { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 1.5 }, "-=0.5")
+        .fromTo('.hw-content', { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 1 }, "-=1")
+        .to('.hw-art', { boxShadow: 'inset 0 0 120px rgba(67,240,176,0.1)', duration: 2 });
+    }, sectionRef);
     return () => ctx.revert();
   }, []);
 
   return (
-    <section className="works section-anchor" id="works" ref={ref}>
-      <div className="works__top">
-        <div className="section-heading" style={{ marginBottom: 0 }}>
-          <TL>04 / SELECTED WORKS</TL>
-          <h2>Ideas made<br /><em>tangible.</em></h2>
-        </div>
-        <p className="works__desc">We create technology that has a job to do — then make it feel inevitable.</p>
+    <section className="hardware-works section-anchor" id="hardware-works" ref={sectionRef}>
+      <div className="section-heading">
+        <TL>04 / ENGINEERING WORKS</TL>
+        <h2>From intelligent concepts to<br /><em>connected</em> real-world systems.</h2>
       </div>
-      <div className="works__grid">
-        {projects.map((project) => (
-          <article className="project-card" key={project.number}>
-            <div className="project-card__meta">
-              <TL>{project.number} / CASE STUDY</TL>
-              <span>{project.type}</span>
+
+      <div className="hw-grid">
+        {/* LEFT: Project Navigation */}
+        <div className="hw-nav">
+          {hardwareProjects.map((proj, idx) => (
+            <button 
+              key={proj.id} 
+              className={`hw-nav-btn ${activeIndex === idx ? 'is-active' : ''}`}
+              onClick={() => setActiveIndex(idx)}
+            >
+              <span className="hw-nav-num">{proj.number}</span>
+              <span className="hw-nav-title">{proj.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* CENTER: Technical Illustration */}
+        <div className="hw-art" ref={artContainerRef}>
+          {activeIndex === 0 && <SolarTrackerArt active={true} accent={activeProj.accent} />}
+          {activeIndex === 1 && <CleaningBotArt active={true} accent={activeProj.accent} />}
+          {activeIndex === 2 && <GarbageBotArt active={true} accent={activeProj.accent} />}
+          {activeIndex === 3 && <SmartWatchArt active={true} accent={activeProj.accent} />}
+          {activeIndex === 4 && <SmartHomeArt active={true} accent={activeProj.accent} />}
+        </div>
+
+        {/* RIGHT: Content & Specs */}
+        <div className="hw-content">
+          <TL>{activeProj.category}</TL>
+          <h3>{activeProj.title}</h3>
+          <p className="hw-overview">{activeProj.overview}</p>
+          
+          <div className="hw-capabilities">
+            <TL>KEY CAPABILITIES</TL>
+            <ul>
+              {activeProj.capabilities.map(cap => <li key={cap}><i style={{backgroundColor: activeProj.accent}}/> {cap}</li>)}
+            </ul>
+          </div>
+          
+          <div className="hw-footer">
+            <div className="hw-tags">
+              {activeProj.tags.map(tag => <span key={tag}>{tag}</span>)}
             </div>
-            <div className="project-card__art">
-              <BlueprintArt kind={project.kind} />
-            </div>
-            <div className="project-card__info">
-              <h3>{project.name}</h3>
-              <p>{project.detail}</p>
-              <button className="sv-cta" style={{ marginTop: '16px' }}>VIEW PROJECT <ArrowRight size={11} /></button>
-            </div>
-          </article>
-        ))}
+            <button className="sv-cta" style={{color: activeProj.accent, borderColor: activeProj.accent}}>EXPLORE PROJECT <ArrowRight size={13} /></button>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -628,9 +844,9 @@ function ServiceModal({ service, onClose }: { service: Service; onClose: () => v
         <div className="service-modal__details">
           <TL>SYSTEM OVERVIEW / ACTIVE</TL>
           <h2 id="service-dialog-title">{service.title}</h2>
-          <p>{service.detail}</p>
+          <p>{service.overview}</p>
           <div className="modal-capabilities">
-            {service.labels.map((label) => (
+            {service.capabilities.map((label: string) => (
               <span key={label}><Check size={12} /> {label}</span>
             ))}
           </div>
@@ -681,25 +897,25 @@ function App() {
     <div className="app-shell">
       <div ref={bootRef} className="boot-overlay" aria-hidden="true">
         <div className="boot-brand">
-          <svg className="brand-icon" viewBox="0 0 32 24" width="48" height="36" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 18h6l9-12" />
-            <path d="M14 18l9-12" />
-          </svg>
+          <img src="/tvlogo-2.png" alt="Techno Versatile" className="boot-img" />
         </div>
         <div className="boot-progress-container">
           <div className="boot-progress-bar" />
         </div>
         <div className="boot-text">TECHNO VERSATILE / SYSTEM INITIALIZING</div>
       </div>
+      
+      <ScrollStoryArt />
+      
       <TopNav onMenu={() => setMenuOpen(true)} />
-      <SideNav activeSection={activeSection} />
+      <DynamicNav activeSection={activeSection} />
 
       <main>
         <HeroSection />
         <AboutSection />
         <ServicesSection onSelect={setSelectedService} />
         <IndustriesSection />
-        <WorksSection />
+        <HardwareWorksSection />
         <ContactSection />
       </main>
 
