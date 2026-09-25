@@ -700,7 +700,7 @@ footer a:hover { color: var(--mint); }
 }
 
 @media (max-width: 1024px) {
-  .top-nav { padding: 16px 24px; }
+  .top-nav { padding: 16px 28px; }
   .top-nav__links { display: none; }
   .menu-button { display: flex; }
   .side-nav { display: none; }
@@ -709,7 +709,7 @@ footer a:hover { color: var(--mint); }
   .hero__layout { padding: 120px 28px 60px 28px; }
   .hero__centre { display: none; }
   .hero__right-copy { max-width: 220px; }
-  .about__body { grid-template-columns: 1fr; gap: 48px; }
+  .about__grid { grid-template-columns: 1fr; gap: 48px; }
   .industries__body { grid-template-columns: 1fr; gap: 48px; }
   .contact__content { grid-template-columns: 1fr; gap: 48px; }
   .service-modal { grid-template-columns: 1fr; max-height: 92vh; }
@@ -722,27 +722,27 @@ footer a:hover { color: var(--mint); }
 
 @media (max-width: 768px) {
   .hero__layout { flex-direction: column; align-items: flex-start; gap: 32px; }
-  .hero__headline { font-size: 3.5rem; }
+  .hero__headline { font-size: clamp(2.5rem, 8vw, 3.5rem); }
   .hero__right-copy { max-width: 100%; }
   .services__grid { grid-template-columns: 1fr; }
-  .works__grid { grid-template-columns: 1fr 1fr; }
   .services__intro { flex-direction: column; align-items: flex-start; gap: 20px; }
   .services__meta { text-align: left; }
   .hw-grid { grid-template-columns: 1fr; }
+  .section-heading h2 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
 }
 
 @media (max-width: 640px) {
   .top-nav { padding: 14px 20px; }
   main > section { padding: 64px 20px; }
   .hero__layout { padding: 100px 20px 60px; }
-  .hero__headline { font-size: 2.8rem; }
-  .hero__cta { flex-direction: column; align-items: flex-start; }
-  .works__grid { grid-template-columns: 1fr; }
-  .works__top { flex-direction: column; gap: 16px; }
+  .hero__headline { font-size: clamp(2rem, 12vw, 2.8rem); word-break: break-word; line-height: 1.1; }
+  .hero__cta { flex-direction: column; align-items: stretch; width: 100%; }
+  .hero__cta a { text-align: center; justify-content: center; }
   .contact-form { padding: 24px 20px; }
-  footer { flex-direction: column; text-align: center; padding: 24px 20px; }
+  footer { flex-direction: column; text-align: center; padding: 24px 20px; gap: 16px; }
   .hero__coordinates { display: none; }
   .hw-nav-btn { width: 180px; }
+  .section-heading h2 { font-size: clamp(1.6rem, 8vw, 2rem); word-break: break-word; line-height: 1.15; }
 }
 
 /* ─── REDUCED MOTION ────────────────────────────────────────── */
